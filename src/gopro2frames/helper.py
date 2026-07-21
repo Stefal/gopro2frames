@@ -63,8 +63,9 @@ class GoProFrameMakerHelper():
 
     @staticmethod
     def decimalDivide(num1, num2):
-        num1 = Decimal(round(num1, 6))
-        num2 = Decimal(round(num2, 6))
+        #print("Dividing {} by {}, type: {}, {}".format(num1, num2, type(num1), type(num2)))
+        num1 = Decimal(round(float(num1), 6))
+        num2 = Decimal(round(float(num2), 6))
         if num2 == 0.0:
             return 0.0
         if num1 == 0.0:
@@ -88,8 +89,9 @@ class GoProFrameMakerHelper():
         if utype == 1:
             gps_speed_accuracy_meters = float('0.1')
             gps_fix_type = gps["GPSMeasureMode"]
-            gps_vertical_accuracy_meters = float(gps["GPSHPositioningError"].strip())
-            gps_horizontal_accuracy_meters = float(gps["GPSHPositioningError"].strip())
+            #GPSHPositioningError is the horizontal accuracy in meters, disabling vertical accuracy for now as it is not present in the metadata.
+            #gps_vertical_accuracy_meters = float(gps["GPSHPositioningError"].strip())
+            gps_horizontal_accuracy_meters = 99 if type(gps["GPSHPositioningError"]) == str else float(gps["GPSHPositioningError"].strip())
         else:
             gps_speed_accuracy_meters = float('0.1')
             gps_fix_type = '3-Dimensional Measurement'
@@ -154,7 +156,7 @@ class GoProFrameMakerHelper():
         return {
             "gps_epoch_seconds": gps_epoch_seconds,
             "gps_fix_type": gps_fix_type,
-            "gps_vertical_accuracy_meters": "{0:.3f}".format(gps_vertical_accuracy_meters),
+            #"gps_vertical_accuracy_meters": "{0:.3f}".format(gps_vertical_accuracy_meters),
             "gps_horizontal_accuracy_meters": "{0:.3f}".format(gps_horizontal_accuracy_meters),
             "gps_velocity_east_next_meters_second": "{0:.3f}".format(gps_velocity_east_next_meters_second),
             "gps_velocity_north_next_meters_second": "{0:.3f}".format(gps_velocity_north_next_meters_second),
@@ -628,9 +630,9 @@ class GoProFrameMakerHelper():
         #validating frame rate parameter used for ffmpeg
         if (args.frame_rate is not None):
             frameRate = args.frame_rate
-            fropts = [0.5, 1, 2, 5]
+            fropts = [0.5, 1, 2, 5, 10, 25, 29.97, 30]
             if frameRate not in fropts:
-                errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5 options are available.".format(frameRate))
+                errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5, 10, 25, 29.97, 30 options are available.".format(frameRate))
             else:
                 arguments["frame_rate"] = frameRate
         else:

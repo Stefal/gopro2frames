@@ -1,3 +1,4 @@
+import dateutil
 import subprocess, threading, itertools, platform, logging, datetime, fnmatch, shutil, pandas as pd, shlex, html, copy, json, math, os, re
 from .helper import GoProFrameMakerHelper
 from geographiclib.geodesic import Geodesic
@@ -300,6 +301,7 @@ class GoProFrameMakerParent():
     def _ffmpeg(self, command, sh=0):
         ffmpeg = str(self.__args['ffmpeg'].resolve())
         command.insert(0, ffmpeg)
+        logging.debug("Running ffmpeg command: {}".format(" ".join(command)))
         ret = self.__subprocess(command, sh, False)
         print(ret)
         
@@ -346,6 +348,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         args = self.getArguments()
         media_folder_full_path = str(args["media_folder_full_path"].resolve())
         #validation max video file size
+        logging.debug("Validating video file...")
         if(len(args["input"]) == 1):
             video_file = str(args["input"][0].resolve())
             fileStat = os.stat(video_file)
@@ -366,9 +369,10 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 exit("The following file {} is too large. The maximum size for a single video is 4GB".format(file_stat_back))
         
         #getting video metadata
+        logging.debug("Getting video metadata...")
         metadata = self.__getVideoMetadata()
-
-        #validation video
+        logging.debug("Validating video metadata..." \
+        "...")
         self.__validateVideo(metadata["video_field_data"])
 
         fileType = args["file_type"].strip().lower()
@@ -376,14 +380,18 @@ class GoProFrameMaker(GoProFrameMakerParent):
         #checking if projection type is equirectangular
         if(metadata["video_field_data"]["ProjectionType"] == "equirectangular"):
             equirectangular = True
-        if(metadata['video_field_data']['DeviceName'] == 'GoPro Max'):
+        if(metadata['video_field_data']['DeviceName'] in ['GoPro Max', 'MAX2']):
             camera = 'max'
-            if((equirectangular == False) and (args['predicted_camera'] == 'max') and (fileType == '360')):
+            #if((equirectangular == False) and (args['predicted_camera'] == 'max') and (fileType == '360')):
+            #    equirectangular = True
+            if fileType == '360':
                 equirectangular = True
+                metadata["video_field_data"]["ProjectionType"] = "equirectangular"
         if(metadata['video_field_data']['DeviceName'].lower() in ['gopro fusion', 'fusion']):
             camera = 'fusion'
             if((equirectangular == False) and (args['predicted_camera'] == 'fusion') and (fileType == 'mp4')):
                 equirectangular = True
+                metadata["video_field_data"]["ProjectionType"] = "equirectangular"
         
         #getting frames
         if fileType == "360":
@@ -488,7 +496,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 logging.critical("This does not appear to be a GoPro 360 video. Only mp4 videos with a 360 equirectangular projection are accepted. Please make sure you are uploading 360 mp4 videos from your camera.")
                 exit("This does not appear to be a GoPro 360 video. Only mp4 videos with a 360 equirectangular projection are accepted. Please make sure you are uploading 360 mp4 videos from your camera.")
         
-        devices = ["Fusion", "GoPro Max"]
+        devices = ["Fusion", "GoPro Max", "MAX2"]
         if videoData['DeviceName'].strip() not in devices:
             logging.critical("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
             exit("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
@@ -537,7 +545,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
     def __breakIntoFrames360(self, videoData, filename, fileoutput):
         args = self.getArguments()
         media_folder_full_path = str(args["media_folder_full_path"].resolve())
-        logging.info("Running ffmpeg to extract images...")
+        logging.info("Running ffmpeg to extract images from .360 file...")
         print("Please wait while image extraction is complete.\nRunning ffmpeg to extract images...")
 
         tracks = videoData['video_field_data']['CompressorNameTrack']
@@ -581,7 +589,6 @@ class GoProFrameMaker(GoProFrameMakerParent):
             _w = 3072
         else:
             _w = imgWidth
-        
         try:
             if args['max_sphere'] == None:
                 if platform.system() == "Windows":
@@ -683,6 +690,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             eltags = elem.tag.split("}")
             nm = eltags[0].replace("{", "")
             tag = eltags[-1].strip()
+            logging.debug("Processing element: {} ({})".format(tag, nm))
             if (tag in gpsFields) and (nm == nsmap[Track]):
                 if tag.strip() in ['GPSHPositioningError', 'GPSMeasureMode']:
                     adata[tag] = elem.text.strip()
@@ -722,7 +730,11 @@ class GoProFrameMaker(GoProFrameMakerParent):
                                         print(ldata, prev)
                                 else:
                                     data['GPSData'].append(ldata)"""
-                                data['GPSData'].append(ldata)
+                                #Adding try-except block to handle potential errors while appending GPS data (no GPSData key in data dictionary, because of missing GPSDateTime, GPSHPositioningError, or GPSMeasureMode)
+                                try:
+                                    data['GPSData'].append(ldata)
+                                except Exception as e:
+                                    print("Error occurred while appending GPS data: {}".format(e))
                                 ldata = {}
         for k, v in adata.items():
             data[k] = v
@@ -739,7 +751,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 if '.' not in videoFieldData['Duration']:
                     videoFieldData['Duration'] = "{}.000".format(videoFieldData['Duration'].strip())
 
-        output = GoProFrameMakerHelper.gpsTimestamps(gpsData, videoFieldData)
+        output = GoProFrameMakerHelper.gpsTimestamps(gpsData[:-1], videoFieldData)
         args = self.getArguments()
         output["filename"] = "{}{}{}_video.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
         self.__saveAFile(output["filename"], output['gpx_data'])
@@ -938,6 +950,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         cmdMetaDataAll = []
         
         counter = 0
+        #print("data in video files: {}".format(data))
         for img in data['images']:
             if counter < photosLen - 1:
                 photo = [data['images'][counter], data['images'][counter + 1]]
@@ -946,8 +959,10 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 end_photo   = imageData[data['images'][counter + 1]]
 
                 #Get Times from metadata
-                start_time = datetime.datetime.strptime(start_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
-                end_time = datetime.datetime.strptime(end_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
+                #start_time = datetime.datetime.strptime(start_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
+                start_time = dateutil.parser.parse(start_photo["Main:GPSDateTime"].replace("Z", ""))
+                end_time = dateutil.parser.parse(end_photo["Main:GPSDateTime"].replace("Z", ""))
+                #end_time = datetime.datetime.strptime(end_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
                 time_diff = (end_time - start_time).total_seconds()
                 gps_epoch_seconds = (start_time-t1970).total_seconds()
 
@@ -974,7 +989,8 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 start_photo = imageData[data['images'][counter]]
 
                 #Get Times from metadata
-                start_time = datetime.datetime.strptime(start_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
+                #start_time = datetime.datetime.strptime(start_photo["Main:GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
+                start_time = dateutil.parser.parse(start_photo["Main:GPSDateTime"].replace("Z", ""))
                 gps_epoch_seconds = (start_time-t1970).total_seconds()
 
                 ext = self.calculateExtensions(
@@ -1019,20 +1035,21 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 '-IFD0:Model="{}"'.format(self.removeEntities(data["video_field_data"]["DeviceName"]))
             ]
             if (data["video_field_data"]["ProjectionType"] == "equirectangular") or ("360ProjectionType" in data["video_field_data"]):
-                cmdMetaData.append('-XMP-GPano:StitchingSoftware="Spherical Metadata Tool"')
-                cmdMetaData.append('-XMP-GPano:ProjectionType="equirectangular"')
-                cmdMetaData.append('-XMP-GPano:SourcePhotosCount="{}"'.format(2))
-                cmdMetaData.append('-XMP-GPano:UsePanoramaViewer="{}"'.format("TRUE"))
-                cmdMetaData.append('-XMP-GPano:CroppedAreaImageHeightPixels="{}"'.format(data["video_field_data"]["SourceImageHeight"]))
-                cmdMetaData.append('-XMP-GPano:CroppedAreaImageWidthPixels="{}"'.format(data["video_field_data"]["SourceImageWidth"]))
-                cmdMetaData.append('-XMP-GPano:FullPanoHeightPixels="{}"'.format(data["video_field_data"]["SourceImageHeight"]))
-                cmdMetaData.append('-XMP-GPano:FullPanoWidthPixels="{}"'.format(data["video_field_data"]["SourceImageWidth"]))
-                cmdMetaData.append('-XMP-GPano:CroppedAreaLeftPixels="{}"'.format(0))
-                cmdMetaData.append('-XMP-GPano:CroppedAreaTopPixels="{}"'.format(0))
+                cmdMetaData.append('-XMP-GPano:StitchingSoftware=Spherical Metadata Tool')
+                cmdMetaData.append('-XMP-GPano:ProjectionType=Equirectangular')
+                cmdMetaData.append('-XMP-GPano:SourcePhotosCount={}'.format(2))
+                cmdMetaData.append('-XMP-GPano:UsePanoramaViewer={}'.format("TRUE"))
+                cmdMetaData.append('-XMP-GPano:CroppedAreaImageHeightPixels={}'.format(data["video_field_data"]["SourceImageHeight"]))
+                cmdMetaData.append('-XMP-GPano:CroppedAreaImageWidthPixels={}'.format(data["video_field_data"]["SourceImageWidth"]))
+                cmdMetaData.append('-XMP-GPano:FullPanoHeightPixels={}'.format(data["video_field_data"]["SourceImageHeight"]))
+                cmdMetaData.append('-XMP-GPano:FullPanoWidthPixels={}'.format(data["video_field_data"]["SourceImageWidth"]))
+                cmdMetaData.append('-XMP-GPano:CroppedAreaLeftPixels={}'.format(0))
+                cmdMetaData.append('-XMP-GPano:CroppedAreaTopPixels={}'.format(0))
             cmdMetaData.append('-overwrite_original')
             cmdMetaData.append("{}{}{}".format(media_folder_full_path, os.sep, photo[0]))
             cmdMetaDataAll.append(cmdMetaData)
             counter = counter + 1
+        #print("Injecting metadata into the images : {}.".format(cmdMetaDataAll))
         ExiftoolInjectImagesMetadata(cmdMetaDataAll)
         gpxData = gpx.to_xml()
         filename = "{}{}{}_photos.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
