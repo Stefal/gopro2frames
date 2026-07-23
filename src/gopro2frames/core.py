@@ -583,10 +583,12 @@ class GoProFrameMaker(GoProFrameMakerParent):
         total_images = fnmatch.filter(os.listdir("{}{}{}".format(media_folder_full_path, os.sep, 'track0')), '*.jpg')
 
         imgWidth = videoData['video_field_data']['SourceImageWidth']
-        if imgWidth == 4096:
+        if int(imgWidth) == 4096:
             _w = 5376
-        elif imgWidth == 2272:
+        elif int(imgWidth) == 2272:
             _w = 3072
+        elif int(imgWidth) == 5888:
+            _w = 7680
         else:
             _w = imgWidth
         try:
@@ -599,11 +601,11 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 max_sphere = str(args['max_sphere'].resolve()).strip()
 
             cmd = [
-                max_sphere, '-w', str(imgWidth), '-n', '1', '-m', str(len(total_images)), 
+                max_sphere, '-w', str(_w), '-n', '1', '-m', str(len(total_images)), 
                 '-o', '{}{}{}'.format(media_folder_full_path, os.sep, '%06d.jpg'),
                 '{}{}{}'.format(media_folder_full_path, os.sep, 'track%d/%06d.jpg')
             ]
-            print(max_sphere)
+            print(max_sphere, cmd)
             output = subprocess.run(cmd, capture_output=True)
             #Max2Sphere(max_sphere, _w, media_folder_full_path, track0, track5)
         except Exception as e:
