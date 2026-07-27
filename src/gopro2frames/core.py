@@ -371,6 +371,8 @@ class GoProFrameMaker(GoProFrameMakerParent):
         #getting video metadata
         logging.debug("Getting video metadata...")
         metadata = self.__getVideoMetadata()
+        print("Video Metadata: {}".format(metadata))
+
         logging.debug("Validating video metadata..." \
         "...")
         self.__validateVideo(metadata["video_field_data"])
@@ -447,19 +449,28 @@ class GoProFrameMaker(GoProFrameMakerParent):
         metadata['images'] = fnmatch.filter(os.listdir(media_folder_full_path), '*.jpg')
         metadata['images'].sort()
         startTime = metadata['startTime']
+        timezone_offset = metadata.get('video_field_data', {}).get('TimeZone', '')
+        if timezone_offset and len(timezone_offset) == 6 and (timezone_offset[0] in ["+", "-"]):
+            sign = 1 if timezone_offset[0] == "+" else -1
+            hours, minutes = map(int, timezone_offset.split(":"))
+            timedelta_offset = timedelta(hours=hours, minutes=minutes) * sign
+        else:
+            print("No TimeZone information found in metadata. Assuming UTC.")
         icounter = 0
         if len(metadata['images']) > 0:
             print('\nStarting to geotag all the images...\n')
             for img in metadata['images']:
-                GPSDateTime = datetime.datetime.strftime(startTime, "%Y:%m:%d %H:%M:%S.%f")
-                tt = GPSDateTime.split(".")
-                tt[1] = tt[1][:3]
-                tz = "T".join(tt[0].split(" "))
-                tt[0] = tz
+                gps_date_time = datetime.datetime.strftime(startTime, "%Y:%m:%d %H:%M:%S.%f")
+                date_time_original = startTime + timedelta_offset if 'timedelta_offset' in locals() else startTime
+                date_time_original_str = date_time_original.strftime("%Y:%m:%d %H:%M:%S.%f") + (timezone_offset if 'timedelta_offset' in locals() else "Z")
+                print("image: {}, gps_date_time: {}, date_time_original: {}".format(img, gps_date_time, date_time_original_str))
+                #tt = gps_date_time.split(".")
+                #tt[1] = tt[1][:3]
+                #tz = "T".join(tt[0].split(" "))
+                #tt[0] = tz
+                # SubSecDateTimeOriginal value for exiftool will write DateTimeOriginal, SubSecTimeOriginal and OffsetTimeOriginal tags.
                 cmdMetaData = [
-                    '-DateTimeOriginal={0}Z'.format(tt[0]),
-                    '-SubSecTimeOriginal={0}'.format(tt[1]),
-                    '-SubSecDateTimeOriginal={0}Z'.format(".".join(tt))
+                    '-SubSecDateTimeOriginal={0}'.format(date_time_original_str),
                 ]
                 cmdMetaData.append('-overwrite_original')
                 cmdMetaData.append("{}{}{}".format(media_folder_full_path, os.sep, metadata['images'][icounter]))
@@ -644,7 +655,8 @@ class GoProFrameMaker(GoProFrameMakerParent):
             'FileSize',
             'FileType',
             'FileTypeExtension',
-            'CompressorName'
+            'CompressorName',
+            'TimeZone',
         ] 
         gpsFields = [
             'GPSDateTime', 
@@ -661,6 +673,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         videoFieldData['MetaFormat'] = ''
         videoFieldData['CompressorName'] = ''
         videoFieldData['CompressorNameTrack'] = []
+        videoFieldData['TimeZone'] = ''
         data = {}
         ldata = {}
         adata = {}
@@ -776,7 +789,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 if '.' not in videoFieldData['Duration']:
                     videoFieldData['Duration'] = "{}.000".format(videoFieldData['Duration'].strip())
 
-        output = GoProFrameMakerHelper.gpsTimestamps(gpsData[:-1], videoFieldData)
+        output = GoProFrameMakerHelper.gpsTimestamps(gpsData[:-1], videoFieldData) #gpsData[:-1] is a quick fix. I need to check why I get a null div error without it.
         args = self.getArguments()
         output["filename"] = "{}{}{}_video.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
         self.__saveAFile(output["filename"], output['gpx_data'])
