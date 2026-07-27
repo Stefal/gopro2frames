@@ -232,6 +232,20 @@ class GoProFrameMakerHelper():
                                 break
                 else:
                     videoFieldData[tag.strip()] = elem.text.strip()
+
+
+        #Data order in the gpmf should be :
+        # lat, long, alt, 2D speed, 3D speed, days since 2000, secs since midnight (ms precision), DOP, fix (0, 2D or 3D)
+
+        #initializing gpsData dictionary with default values to avoid KeyError when appending GPS data if GPSDateTime is not 
+        #found before GPSLatitude, GPSLongitude, or GPSAltitude
+        data = {
+       'GPSData': [],
+        'GPSHPositioningError': '',
+        'GPSMeasureMode': '',
+        'GPSDateTime': ''
+        }
+        previousDateTime = None
         for elem in root[0]:
             eltags = elem.tag.split("}")
             nm = eltags[0].replace("{", "")
@@ -240,32 +254,41 @@ class GoProFrameMakerHelper():
                 if tag.strip() in ['GPSHPositioningError', 'GPSMeasureMode']:
                     adata[tag] = elem.text.strip()
                 if tag == 'GPSDateTime':
-                    if anchor != '': 
+                    #print("Found GPSDateTime: {}, adata values: {}".format(elem.text.strip(), adata))
+                    if previousDateTime is not None: 
+                        newDateTime = str(elem.text.strip())                        
                         for k, v in adata.items():
                             data[k] = v
+                        data['GPSDateTime'] = newDateTime
                         gpsData.append(data)
-                        anchor = str(elem.text.strip())
                         data = {
                             'GPSData': [],
                             'GPSHPositioningError': '',
                             'GPSMeasureMode': '',
-                            'GPSDateTime': anchor
+                            'GPSDateTime': newDateTime
                         }
+                        previousDateTime = newDateTime
+                        #data['GPSDateTime'] = previousDateTime
                     else:
-                        anchor = str(elem.text.strip())
-                        data = {
-                            'GPSData': [],
-                            'GPSHPositioningError': '',
-                            'GPSMeasureMode': '',
-                            'GPSDateTime': anchor
-                        }
+                        newDateTime = str(elem.text.strip())                        
                         for k, v in adata.items():
                             data[k] = v
+                        data['GPSDateTime'] = newDateTime
+                        gpsData.append(data)
+                        data = {
+                            'GPSData': [],
+                            'GPSHPositioningError': '',
+                            'GPSMeasureMode': '',
+                            'GPSDateTime': newDateTime
+                        }
+                        previousDateTime = newDateTime
+                        
                 else:
                     if tag.strip() in ['GPSLatitude', 'GPSLongitude', 'GPSAltitude']:
                         if (len(ldata) <= 3):
                             ldata[tag] = elem.text.strip()
                             if len(ldata) == 3:
+                                #The triplet of GPSLatitude, GPSLongitude, and GPSAltitude is complete, so we can append it to the GPSData list in the data dictionary.
                                 """if len(data['GPSData']) > 0:
                                     prev = data['GPSData'][-1]
                                     if (((ldata['GPSLatitude'] == prev['GPSLatitude']) and (ldata['GPSLongitude'] == prev['GPSLongitude']) and (ldata['GPSAltitude'] == prev['GPSAltitude'])) is not True):
@@ -275,8 +298,15 @@ class GoProFrameMakerHelper():
                                         print(ldata, prev)
                                 else:
                                     data['GPSData'].append(ldata)"""
-                                data['GPSData'].append(ldata)
+                                #Adding try-except block to handle potential errors while appending GPS data (no GPSData key in data dictionary, because of missing GPSDateTime, GPSHPositioningError, or GPSMeasureMode)
+                                try:
+                                    data['GPSData'].append(ldata)
+                                except Exception as e:
+
+                                    print("Error occurred while appending GPS data: {}".format(e))
+                                #Now we empty the ldata dictionary to prepare for the next set of GPS data.
                                 ldata = {}
+
         for k, v in adata.items():
             data[k] = v
         gpsData.append(data)
