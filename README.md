@@ -52,12 +52,12 @@ gopro2frames [options] VIDEO_NAME.mp4
 * `ffmpeg_path` (if left blank): path to ffmpeg
 	* default: assumes ffmpeg is installed globally
 * `frame_rate`: sets the frame rate (frames per second) for extraction,
-	* default: `1`
-	* options: `0.1`,`0.2`,`0.5`,`1`,`2`,`3`,`4`,`5`
+	* default: `0.5`
+	* options: `0.5`,`1`,`2`,`5`,`10`,`25`,`29.97`,`30`
 * `quality`: sets the extracted quality between 1-6. 1 being the highest quality (but slower processing). This is value used for ffmpeg `-q:v` flag.
 	* default: `1`
 	* options: `1`,`2`,`3`,`4`,`5`,`6`
-* `time_warp`: You NEED to use this if video was shot in timewarp mode, else telemetry will be inaccurate. The script does not support timewarp mode set to Auto (because it's impossible to determine the capture rate). Set the timewarp speed used when shooting in this field
+* `time_warp`: You NEED to use this if video was shot in timewarp mode, else telemetry will be inaccurate. The script does not support timewarp mode set to Auto speed (because it's impossible to determine the capture rate). Set the timewarp speed used when shooting in this field
 	* default: blank (not timewarp)
 	* options: `2x`, `5x`, `10x`, `15x`, `30x`
 * `debug`: enable debug mode.
@@ -96,6 +96,7 @@ This script has currently been tested with the following GoPro cameras:
 	* HERO 9
 	* HERO 10
 * GoPro MAX
+* GoPro MAX 2
 * GoPro Fusion
 
 It is very likely that older cameras are also supported, but we provide no support for these as they have not been tested.
