@@ -512,7 +512,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             logging.critical("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
             exit("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
         
-        if args["frame_rate"] > 5:
+        if args["frame_rate"] < 5:
             logging.warning("It appears the frame rate of this video is very low. You can continue, but the images in the Sequence might not render as expected.")
             print("It appears the frame rate of this video is very low. You can continue, but the images in the Sequence might not render as expected.")
 
@@ -657,6 +657,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             'FileTypeExtension',
             'CompressorName',
             'TimeZone',
+            'Rate',
         ] 
         gpsFields = [
             'GPSDateTime', 
@@ -673,7 +674,6 @@ class GoProFrameMaker(GoProFrameMakerParent):
         videoFieldData['MetaFormat'] = ''
         videoFieldData['CompressorName'] = ''
         videoFieldData['CompressorNameTrack'] = []
-        videoFieldData['TimeZone'] = ''
         data = {}
         ldata = {}
         adata = {}
