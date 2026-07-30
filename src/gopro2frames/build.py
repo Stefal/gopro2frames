@@ -14,11 +14,20 @@ class BuildCExecutables(_build_py):
         data_out.mkdir(parents=True, exist_ok=True)
 
         for name in ('max2sphere', 'fusion2sphere'):
-            c_dir = pkg_root / 'csrc' / name
+            c_dir = pkg_root / 'csrc' / name 
+            print(f'building {name} in {c_dir}')
+            import os
+            print("real cwd =", os.path.abspath(c_dir))
+            print((Path(c_dir) / "Makefile-Linux").exists())
             self.announce(f'building {name} in {c_dir}', level=3)
 
             # run `make -f Makefile` inside its own directory
-            subprocess.check_call(['make', '-f', 'Makefile'], cwd=c_dir)
+            running_plateform = platform.system()
+            if running_plateform == 'Linux':
+                if name == 'max2sphere':
+                    subprocess.check_call('make -f Makefile-Linux', cwd=c_dir, shell=True)
+                if name == 'fusion2sphere':
+                    subprocess.check_call('make -f Makefile', cwd=c_dir, shell=True)
 
             exe = c_dir / (name + ('.exe' if platform.system() == 'Windows' else ''))
             shutil.copy2(exe, out_dir / exe.name)
