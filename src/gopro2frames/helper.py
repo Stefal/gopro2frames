@@ -660,9 +660,9 @@ class GoProFrameMakerHelper():
         #validating frame rate parameter used for ffmpeg
         if (args.frame_rate is not None):
             frameRate = args.frame_rate
-            fropts = [0.5, 1, 2, 5, 10, 25, 29.97, 30]
+            fropts = [0.5, 1, 2, 5, 10, 25, 29.97, 30, "auto"]
             if frameRate not in fropts:
-                errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5, 10, 25, 29.97, 30 options are available.".format(frameRate))
+                errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5, 10, 25, 29.97, 30, and 'auto' options are available.".format(frameRate))
             else:
                 arguments["frame_rate"] = frameRate
         else:
@@ -683,9 +683,9 @@ class GoProFrameMakerHelper():
         #validating time warp parameter used for ffmpeg
         if (args.time_warp.strip() != ""):
             timeWarp = str(args.time_warp)
-            twopts = ["2x", "5x", "10x", "15x", "30x"]
+            twopts = ["2x", "5x", "10x", "15x", "30x", "auto"]
             if timeWarp not in twopts:
-                errors.append("Timewarp mode {} not available. Only 2x, 5x, 10x, 15x, 30x options are available.".format(timeWarp))
+                errors.append("Timewarp mode {} not available. Only 2x, 5x, 10x, 15x, 30x, and 'auto' options are available.".format(timeWarp))
             else:
                 arguments["time_warp"] = timeWarp
         else:

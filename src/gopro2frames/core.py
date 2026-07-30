@@ -93,11 +93,16 @@ class GoProFrameMakerParent():
         
         args['log_folder'] = Path('{}{}{}'.format(str(args['media_folder_full_path'].resolve()), os.sep, 'logs'))
         args['date_time_current'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        self.__args = copy.deepcopy(args)
+        self._args = args
         self.__setLogging()
 
+    @property
+    def __args(self):
+        return self._args
+    
     def get_arguments(self):
-        return copy.deepcopy(self.__args)
+        #return copy.deepcopy(self.__args)
+        return self._args
 
     def __setLogging(self):
         logFolder = str(self.__args['log_folder'].resolve())
@@ -337,7 +342,9 @@ class GoProFrameMaker(GoProFrameMakerParent):
         super().__init__(args)
 
     def getArguments(self):
-        return copy.deepcopy(self.get_arguments())
+        #return copy.deepcopy(self.get_arguments())
+        return self.get_arguments()
+        
 
     def initiateProcessing(self):
         self.__startProcessing()
@@ -511,14 +518,22 @@ class GoProFrameMaker(GoProFrameMakerParent):
         if videoData['DeviceName'].strip() not in devices:
             logging.critical("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
             exit("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
-        
-        if args["frame_rate"] < 5:
-            logging.warning("It appears the frame rate of this video is very low. You can continue, but the images in the Sequence might not render as expected.")
-            print("It appears the frame rate of this video is very low. You can continue, but the images in the Sequence might not render as expected.")
 
-        if args["time_warp"] is not None:
-            logging.warning("It appears this video was captured in timewarp mode. You can continue, but the images in the Sequence might not render as expected.")
-            print("It appears this video was captured in timewarp mode. You can continue, but the images in the Sequence might not render as expected.")
+        if args["frame_rate"].lower() == 'auto':
+            if videoData.get("VideoFrameRate") is not None:
+                self._args["frame_rate"] = round(float(videoData.get("VideoFrameRate").strip().lower()),2)
+                print("Frame rate detected from metadata: {}".format(args["frame_rate"]))
+            else:
+                logging.warning("Unable to determine frame rate from metadata. Please specify the frame rate using the --frame-rate option.")
+                exit("Unable to determine frame rate from metadata. Please specify the frame rate using the --frame-rate option.")
+
+        if args["time_warp"].lower() == "auto":
+            if videoData.get("Rate") is not None:
+                self._args["time_warp"] = videoData.get("Rate").strip().lower()
+                print("Timewarp rate detected from metadata: {}".format(args["time_warp"]))
+            else:
+                logging.warning("Unable to determine timewarp rate from metadata. Please specify the timewarp rate using the --time-warp option.")
+                exit("Unable to determine timewarp rate from metadata. Please specify the timewarp rate using the --time-warp option.")
 
         FileType = ["MP4", "360", "MOV"]
         if videoData["FileType"].strip().upper() not in FileType:

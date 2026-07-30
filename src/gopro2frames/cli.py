@@ -16,8 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
     #ffmpeg binary
     parser.add_argument("--ffmpeg-path", type=str, help="Set the path for ffmpeg.", default=shutil.which("ffmpeg"))
     #ffmpeg options
-    parser.add_argument("-r", "--frame-rate", type=float, help="Sets the frame rate (frames per second) for extraction (available=[0.5, 1, 2, 5, 10, 25, 29.97, 30]), default: 0.5.", default=0.5)
-    parser.add_argument("-t", "--time-warp", type=str, help="Set time warp mode for gopro. available values are 2x, 5x, 10x, 15x, 30x", default="")
+    parser.add_argument("-r", "--frame-rate", help="Sets the frame rate (frames per second) for extraction available values are 'auto', 0.5, 1, 2, 5, 10, 25, 29.97, 30, default: 'auto'", default="auto")
+    parser.add_argument("-t", "--time-warp", type=str, help="Set time warp mode for gopro. available values are 'auto', 2x, 5x, 10x, 15x, and 30x', default: 'auto'", default="auto")
     parser.add_argument("-q", "--quality", type=int, help="Sets the extracted quality between 2-6. 1 being the highest quality (but slower processing), default: 1. This is value used for ffmpeg -q:v flag. ", default=1)
 
     #max2spherebatch
