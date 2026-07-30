@@ -19,7 +19,8 @@ dependencies = [
     "pandas>=2.2",
     "geographiclib",
     "haversine",
-    "gpxpy"
+    "gpxpy",
+    "lxml"
 ]
 
 [project.scripts]
