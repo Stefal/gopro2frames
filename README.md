@@ -1,6 +1,6 @@
 # GoPro 360 mp4 video to frames
 
-Converts GoPro mp4s with equirectangular projections into single frames with correct metadata.
+Converts GoPro videos with equirectangular or EAC projections into single jpg frames with correct metadata.
 
 
 ## Installation
@@ -48,7 +48,7 @@ pip install .
 ## Usage
 
 ```
-gopro2frames [options] VIDEO_NAME.360
+gopro2frames [options] path/to/video_file.360
 ```
 
 ### Options
@@ -66,10 +66,10 @@ gopro2frames [options] VIDEO_NAME.360
 * `--time_warp`: The script does not support timewarp mode set to Auto speed (because it's impossible to determine the capture rate). Set the timewarp speed used when shooting in this field
 	* default: `auto`
 	* options: `auto`, `2x`, `5x`, `10x`, `15x`, `30x`
-* `quality`: sets the extracted quality between 1-6. 1 being the highest quality (but slower processing). This is value used for ffmpeg `-q:v` flag.
+* `--quality`: sets the extracted quality between 1-6. 1 being the highest quality (but slower processing). This is value used for ffmpeg `-q:v` flag.
 	* default: `1`
 	* options: `1`,`2`,`3`,`4`,`5`,`6`
-* `debug`: enable debug mode.
+* `--debug`: enable debug mode.
 	* Default: `FALSE`
 	* options: `TRUE`,`FALSE`
 
