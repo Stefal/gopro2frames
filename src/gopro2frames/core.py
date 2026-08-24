@@ -1089,7 +1089,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             ]
             if (data["video_field_data"]["ProjectionType"] == "equirectangular") or ("360ProjectionType" in data["video_field_data"]):
                 cmdMetaData.append('-XMP-GPano:StitchingSoftware=Spherical Metadata Tool')
-                cmdMetaData.append('-XMP-GPano:ProjectionType=Equirectangular')
+                cmdMetaData.append('-XMP-GPano:ProjectionType=equirectangular')
                 cmdMetaData.append('-XMP-GPano:SourcePhotosCount={}'.format(2))
                 cmdMetaData.append('-XMP-GPano:UsePanoramaViewer={}'.format("TRUE"))
                 cmdMetaData.append('-XMP-GPano:CroppedAreaImageHeightPixels={}'.format(data["video_field_data"]["SourceImageHeight"]))
