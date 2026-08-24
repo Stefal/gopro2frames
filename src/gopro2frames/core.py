@@ -1085,6 +1085,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 '-GPSImgDirection={}'.format(ext['gps_heading_next_degrees']),
                 '-GPSImgDirectionRef=m',
                 '-GPSPitch={}'.format(ext['gps_pitch_next_degrees']),
+                '-IFD0:Make=GoPro',
                 '-IFD0:Model="{}"'.format(self.removeEntities(data["video_field_data"]["DeviceName"]))
             ]
             if (data["video_field_data"]["ProjectionType"] == "equirectangular") or ("360ProjectionType" in data["video_field_data"]):
