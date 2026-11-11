@@ -53,7 +53,7 @@ gopro2frames [options] path/to/video_file.360
 
 ### Options
 
-* `--media_folder_full_path`: where to save the frames
+* `--output_folder`: where to save the frames
 	* default: `frames` (will create a folder called `frames` in the current directory)
 	* options: any valid path
 * --`magick_path`: path to imagemagick

@@ -83,15 +83,15 @@ def _timestamp_to_seconds(token: str) -> float:
 class GoProFrameMakerParent():
     def __init__(self, args):
         getcontext().prec = 6
-        media_folder_full_path = str(args["media_folder_full_path"].resolve())
+        media_folder_full_path = str(args["output_folder"].resolve())
         try:
             if os.path.exists(media_folder_full_path):
                 shutil.rmtree(media_folder_full_path)
-            os.makedirs(media_folder_full_path, exist_ok=True) 
+            os.makedirs(media_folder_full_path, exist_ok=True)
         except:
             exit('Unable to create main media directory {}'.format(media_folder_full_path))
-        
-        args['log_folder'] = Path('{}{}{}'.format(str(args['media_folder_full_path'].resolve()), os.sep, 'logs'))
+
+        args['log_folder'] = Path('{}{}{}'.format(str(args['output_folder'].resolve()), os.sep, 'logs'))
         args['date_time_current'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         self._args = args
         self.__setLogging()
@@ -99,7 +99,7 @@ class GoProFrameMakerParent():
     @property
     def __args(self):
         return self._args
-    
+
     def get_arguments(self):
         #return copy.deepcopy(self.__args)
         return self._args
@@ -183,7 +183,7 @@ class GoProFrameMakerParent():
             gps_fix_type = '3-Dimensional Measurement'
             gps_vertical_accuracy_meters = float('0.1')
             gps_horizontal_accuracy_meters = float('0.1')
-        
+
         if etype == 1:
             #Get Times from metadata
             start_time = times[0]
@@ -217,7 +217,7 @@ class GoProFrameMakerParent():
             #print((start_latitude, start_longitude), (end_latitude, end_longitude))
             #print("AC: {}, BC: {}, azimuth1: {}, azimuth2: {}, \ntime: {}, distance: {} seconds: {}\n\n\n".format(AC, BC, azimuth1, azimuth2, Decimal(time_diff), distance, gps_epoch_seconds))
             gps_elevation_change_next_meters = float(end_altitude - start_altitude)
-            gps_velocity_east_next_meters_second = self.decimalDivide( AC, time_diff ) 
+            gps_velocity_east_next_meters_second = self.decimalDivide( AC, time_diff )
             gps_velocity_north_next_meters_second = self.decimalDivide( BC, time_diff )
             gps_velocity_up_next_meters_second = self.decimalDivide( gps_elevation_change_next_meters, time_diff )
             gps_speed_next_meters_second = self.decimalDivide( distance, time_diff )
@@ -262,7 +262,7 @@ class GoProFrameMakerParent():
             cmd = command
             if sh == 0:
                 cmd = shlex.split(" ".join(cmd))
-            
+
             output = subprocess.run(cmd, capture_output=capture_output)
             logging.info(output)
             if output.returncode == 0:
@@ -309,7 +309,7 @@ class GoProFrameMakerParent():
         logging.debug("Running ffmpeg command: {}".format(" ".join(command)))
         ret = self.__subprocess(command, sh, False)
         print(ret)
-        
+
         """if ret["error"] is not None:
             logging.critical(ret["error"])
             exit("Error occured while executing ffmpeg, please see logs for more info.")"""
@@ -344,7 +344,6 @@ class GoProFrameMaker(GoProFrameMakerParent):
     def getArguments(self):
         #return copy.deepcopy(self.get_arguments())
         return self.get_arguments()
-        
 
     def initiateProcessing(self):
         self.__startProcessing()
@@ -353,7 +352,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         camera = ''
         equirectangular = False
         args = self.getArguments()
-        media_folder_full_path = str(args["media_folder_full_path"].resolve())
+        media_folder_full_path = str(args["output_folder"].resolve())
         #validation max video file size
         logging.debug("Validating video file...")
         if(len(args["input"]) == 1):
@@ -374,7 +373,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             if file_stat_back.st_size > 4000000000:
                 logging.critical("The following file {} is too large. The maximum size for a single video is 4GB".format(file_stat_back))
                 exit("The following file {} is too large. The maximum size for a single video is 4GB".format(file_stat_back))
-        
+
         #getting video metadata
         logging.debug("Getting video metadata...")
         metadata = self.__getVideoMetadata()
@@ -401,7 +400,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             if((equirectangular == False) and (args['predicted_camera'] == 'fusion') and (fileType == 'mp4')):
                 equirectangular = True
                 metadata["video_field_data"]["ProjectionType"] = "equirectangular"
-        
+
         #getting frames
         if fileType == "360":
             if camera == 'max':
@@ -415,16 +414,16 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 fusion_front = "{}{}{}".format(media_folder_full_path, os.sep, 'front')
                 if os.path.exists(fusion_front):
                     shutil.rmtree(fusion_front)
-                os.makedirs(fusion_front, exist_ok=True) 
+                os.makedirs(fusion_front, exist_ok=True)
                 fusion_back = "{}{}{}".format(media_folder_full_path, os.sep, 'back')
                 if os.path.exists(fusion_back):
                     shutil.rmtree(fusion_back)
-                os.makedirs(fusion_back, exist_ok=True) 
+                os.makedirs(fusion_back, exist_ok=True)
                 self.__breakIntoFrames(video_file_front, fusion_front, '')
                 self.__breakIntoFrames(video_file_back, fusion_back, '')
                 total_images = fnmatch.filter(os.listdir(fusion_front), '*.jpg')
                 cmd = [
-                    str(args['fusion_sphere'].resolve()), 
+                    str(args['fusion_sphere'].resolve()),
                     '-w', str(4096), '-b', '5',
                     '-g', '1', '-h', str(len(total_images)), 
                     '-o', "{}{}%06d.jpg".format(media_folder_full_path, os.sep),
@@ -482,7 +481,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 cmdMetaData.append('-overwrite_original')
                 cmdMetaData.append("{}{}{}".format(media_folder_full_path, os.sep, metadata['images'][icounter]))
                 output = self.exiftool(cmdMetaData)
-                startTime = startTime+datetime.timedelta(0, ms) 
+                startTime = startTime+datetime.timedelta(0, ms)
                 icounter = icounter + 1
             cmd = [
                 '-geotag', 
@@ -491,9 +490,9 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 '-overwrite_original', 
                 media_folder_full_path
             ]
-            
+
             output = self.exiftool(cmd)
-            
+
             self.__updateImagesMetadata(metadata, equirectangular)
         else:
             exit('Not enough images available for geotagging.')
@@ -508,12 +507,12 @@ class GoProFrameMaker(GoProFrameMakerParent):
             exit("Your video has no telemetry. You need to enable GPS on your GoPro to ensure GPS location is captured.")
         else:
             metaFormat = True
-        
+
         if videoData["ProjectionType"].strip()  != 'equirectangular':
             if metaFormat is False:
                 logging.critical("This does not appear to be a GoPro 360 video. Only mp4 videos with a 360 equirectangular projection are accepted. Please make sure you are uploading 360 mp4 videos from your camera.")
                 exit("This does not appear to be a GoPro 360 video. Only mp4 videos with a 360 equirectangular projection are accepted. Please make sure you are uploading 360 mp4 videos from your camera.")
-        
+
         devices = ["Fusion", "GoPro Max", "MAX2"]
         if videoData['DeviceName'].strip() not in devices:
             logging.critical("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
@@ -556,7 +555,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             else:
                 tw = ""
             test_str = "-q_{}-r_{}fps{}".format(
-                args["quality"], 
+                args["quality"],
                 args["frame_rate"], tw
             )
         cmd = [
@@ -567,10 +566,10 @@ class GoProFrameMaker(GoProFrameMakerParent):
         ]
 
         output = self._ffmpeg(cmd, 1)
-        
+
     def __breakIntoFrames360(self, videoData, filename, fileoutput):
         args = self.getArguments()
-        media_folder_full_path = str(args["media_folder_full_path"].resolve())
+        media_folder_full_path = str(args["output_folder"].resolve())
         logging.info("Running ffmpeg to extract images from .360 file...")
         print("Please wait while image extraction is complete.\nRunning ffmpeg to extract images...")
 
@@ -587,11 +586,11 @@ class GoProFrameMaker(GoProFrameMakerParent):
         track0 = "{}{}{}".format(fileoutput, os.sep, 'track0')
         if os.path.exists(track0):
             shutil.rmtree(track0)
-        os.makedirs(track0, exist_ok=True) 
+        os.makedirs(track0, exist_ok=True)
         track5 = "{}{}{}".format(fileoutput, os.sep, 'track5')
         if os.path.exists(track5):
             shutil.rmtree(track5)
-        os.makedirs(track5, exist_ok=True) 
+        os.makedirs(track5, exist_ok=True)
         cmd = [
             "-i", filename,
             "-map", trackmapFirst,
@@ -603,7 +602,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             "-q:v", str(args["quality"]), 
             track5 + os.sep + "%06d.jpg"
         ]
-        
+
         output = self._ffmpeg(cmd, 1)
 
         total_images = fnmatch.filter(os.listdir("{}{}{}".format(media_folder_full_path, os.sep, 'track0')), '*.jpg')
@@ -627,7 +626,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 max_sphere = str(args['max_sphere'].resolve()).strip()
 
             cmd = [
-                max_sphere, '-w', str(_w), '-n', '1', '-m', str(len(total_images)), 
+                max_sphere, '-w', str(_w), '-n', '1', '-m', str(len(total_images)),
                 '-o', '{}{}{}'.format(media_folder_full_path, os.sep, '%06d.jpg'),
                 '{}{}{}'.format(media_folder_full_path, os.sep, 'track%d/%06d.jpg')
             ]
@@ -648,7 +647,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
     def __getVideoMetadata(self):
         args = self.getArguments()
         exif_xml_data = self.get_video_exif_data()
-        xmlFileName = "{}{}{}.xml".format(args["media_folder_full_path"], os.sep, args["media_folder"])
+        xmlFileName = "{}{}{}.xml".format(args["output_folder"], os.sep, args["media_folder"])
         self.__saveAFile(xmlFileName, exif_xml_data)
         if(Path(xmlFileName).is_file() == False):
             exit('Unable to save xml file: {}'.format(xmlFileName))
@@ -673,7 +672,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             'CompressorName',
             'TimeZone',
             'Rate',
-        ] 
+        ]
         gpsFields = [
             'GPSDateTime', 
             'GPSLatitude', 
@@ -719,7 +718,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         #Data order in the gpmf should be :
         # lat, long, alt, 2D speed, 3D speed, days since 2000, secs since midnight (ms precision), DOP, fix (0, 2D or 3D)
 
-        #initializing gpsData dictionary with default values to avoid KeyError when appending GPS data if GPSDateTime is not 
+        #initializing gpsData dictionary with default values to avoid KeyError when appending GPS data if GPSDateTime is not
         #found before GPSLatitude, GPSLongitude, or GPSAltitude
         data = {
        'GPSData': [],
@@ -737,8 +736,8 @@ class GoProFrameMaker(GoProFrameMakerParent):
                     adata[tag] = elem.text.strip()
                 if tag == 'GPSDateTime':
                     #print("Found GPSDateTime: {}, adata values: {}".format(elem.text.strip(), adata))
-                    if previousDateTime is not None: 
-                        newDateTime = str(elem.text.strip())                        
+                    if previousDateTime is not None:
+                        newDateTime = str(elem.text.strip())
                         for k, v in adata.items():
                             data[k] = v
                         data['GPSDateTime'] = newDateTime
@@ -752,7 +751,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                         previousDateTime = newDateTime
                         #data['GPSDateTime'] = previousDateTime
                     else:
-                        newDateTime = str(elem.text.strip())                        
+                        newDateTime = str(elem.text.strip())
                         for k, v in adata.items():
                             data[k] = v
                         data['GPSDateTime'] = newDateTime
@@ -764,7 +763,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                             'GPSDateTime': newDateTime
                         }
                         previousDateTime = newDateTime
-                        
+
                 else:
                     if tag.strip() in ['GPSLatitude', 'GPSLongitude', 'GPSAltitude']:
                         if (len(ldata) <= 3):
@@ -806,7 +805,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
 
         output = GoProFrameMakerHelper.gpsTimestamps(gpsData[:-1], videoFieldData) #gpsData[:-1] is a quick fix. I need to check why I get a null div error without it.
         args = self.getArguments()
-        output["filename"] = "{}{}{}_video.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
+        output["filename"] = "{}{}{}_video.gpx".format(args["output_folder"], os.sep, args["media_folder"])
         self.__saveAFile(output["filename"], output['gpx_data'])
         if(Path(output["filename"]).is_file() == False):
             exit('Unable to save file: {}'.format(output["filename"]))
@@ -845,7 +844,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                     if start_time == end_time:
                         start_time = end_time
                         diff = int((0.05)*1000.0)
-                        end_time = end_time+datetime.timedelta(0, 0.05) 
+                        end_time = end_time+datetime.timedelta(0, 0.05)
                 new = pd.date_range(start=start_time, end=end_time, inclusive='left', freq="{}ms".format(diff))
                 icounter = 0
                 dlLen = 1 if len(start_gps["GPSData"]) < 1 else len(start_gps["GPSData"])
@@ -867,13 +866,11 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 #_e_date = start_gps["GPSDateTime"].split(" ")[0]
                 zero_start = datetime.datetime.strptime("2022:1:1 00:00:00.000", "%Y:%m:%d %H:%M:%S.%f")
                 zero_duration = datetime.datetime.strptime("2022:1:1 {}".format(videoFieldData['Duration']), "%Y:%m:%d %H:%M:%S.%f")
-                
-
                 start_time = datetime.datetime.strptime(start_gps["GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
                 first_start_time = datetime.datetime.strptime(gpsData[0]["GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
                 l_1 = (start_time - first_start_time).total_seconds()
                 l_2 = (zero_duration - zero_start).total_seconds()
-                end_time = start_time+datetime.timedelta(0, l_2-l_1) 
+                end_time = start_time+datetime.timedelta(0, l_2-l_1)
                 time_diff = (end_time - start_time).total_seconds()
                 diff = int((time_diff/float(len(start_gps["GPSData"])))*1000.0)
                 #check this later
@@ -882,7 +879,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                         print('####')
                         start_time = end_time
                         diff = int((0.05)*1000.0)
-                        end_time = end_time+datetime.timedelta(0, 0.05) 
+                        end_time = end_time+datetime.timedelta(0, 0.05)
                 new = pd.date_range(start=start_time, end=end_time, inclusive='left', freq="{}ms".format(diff))
                 icounter = 0
                 dlLen = 1 if len(start_gps["GPSData"]) < 1 else len(start_gps["GPSData"])
@@ -916,9 +913,9 @@ class GoProFrameMaker(GoProFrameMakerParent):
             start_longitude = self.latLngToDecimal(gps["GPSLongitude"])
             start_altitude = self.getAltitudeFloat(gps["GPSAltitude"])
             gpx_point = gpxpy.gpx.GPXTrackPoint(
-                latitude=start_latitude, 
-                longitude=start_longitude, 
-                time=start_time, 
+                latitude=start_latitude,
+                longitude=start_longitude,
+                time=start_time,
                 elevation=start_altitude
             )
             gpx_segment.points.append(gpx_point)
@@ -933,7 +930,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 end_altitude = self.getAltitudeFloat(Timestamps[icounter+1]["GPSAltitude"])
 
                 ext = self.calculateExtensions(
-                    gps, 
+                    gps,
                     (start_time, end_time, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -943,7 +940,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 )
             else:
                 ext = self.calculateExtensions(
-                    gps, 
+                    gps,
                     (start_time, None, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -958,10 +955,10 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 """)
                 gpx_point.extensions.append(gpx_extension)
             icounter = icounter + 1
-        gpxData = gpx.to_xml() 
+        gpxData = gpx.to_xml()
         args = self.getArguments()
 
-        filename = "{}{}{}_video.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
+        filename = "{}{}{}_video.gpx".format(args["output_folder"], os.sep, args["media_folder"])
         self.__saveAFile(filename, gpxData)
         if(Path(filename).is_file() == False):
             exit('Unable to save file: {}'.format(filename))
@@ -980,7 +977,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
 
     def __updateImagesMetadata(self, data, equirectangular):
         args = self.getArguments()
-        media_folder_full_path = str(args["media_folder_full_path"].resolve())
+        media_folder_full_path = str(args["output_folder"].resolve())
         print("Starting to inject additional metadata into the images...")
 
         gpx = gpxpy.gpx.GPX()
@@ -1001,7 +998,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         imageData = ExiftoolGetImagesMetadata(media_folder_full_path, data['images'], imageData)
 
         cmdMetaDataAll = []
-        
+
         counter = 0
         #print("data in video files: {}".format(data))
         for img in data['images']:
@@ -1028,7 +1025,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 end_altitude = self.getAltitudeFloat(end_photo["Main:GPSAltitude"])
 
                 ext = self.calculateExtensions(
-                    start_photo, 
+                    start_photo,
                     (start_time, end_time, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -1047,7 +1044,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 gps_epoch_seconds = (start_time-t1970).total_seconds()
 
                 ext = self.calculateExtensions(
-                    start_photo, 
+                    start_photo,
                     (start_time, None, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -1056,9 +1053,9 @@ class GoProFrameMaker(GoProFrameMakerParent):
                     0, 0
                 )
             gpx_point = gpxpy.gpx.GPXTrackPoint(
-                latitude=start_latitude, 
-                longitude=start_longitude, 
-                time=start_time, 
+                latitude=start_latitude,
+                longitude=start_longitude,
+                time=start_time,
                 elevation=start_altitude
             )
             gpx_segment.points.append(gpx_point)
@@ -1106,7 +1103,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
         #print("Injecting metadata into the images : {}.".format(cmdMetaDataAll))
         ExiftoolInjectImagesMetadata(cmdMetaDataAll)
         gpxData = gpx.to_xml()
-        filename = "{}{}{}_photos.gpx".format(args["media_folder_full_path"], os.sep, args["media_folder"])
+        filename = "{}{}{}_photos.gpx".format(args["output_folder"], os.sep, args["media_folder"])
         self.__saveAFile(filename, gpxData)
         if(Path(filename).is_file() == False):
             exit('Unable to save file: {}'.format(filename))

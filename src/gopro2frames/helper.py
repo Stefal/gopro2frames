@@ -97,7 +97,7 @@ class GoProFrameMakerHelper():
             gps_fix_type = '3-Dimensional Measurement'
             gps_vertical_accuracy_meters = float('0.1')
             gps_horizontal_accuracy_meters = float('0.1')
-        
+
         if etype == 1:
             #Get Times from metadata
             start_time = times[0]
@@ -132,7 +132,7 @@ class GoProFrameMakerHelper():
             #print("AC: {}, BC: {}, azimuth1: {}, azimuth2: {}, \ntime: {}, distance: {} seconds: {}\n\n\n".format(AC, BC, azimuth1, azimuth2, Decimal(time_diff), distance, gps_epoch_seconds))
 
             gps_elevation_change_next_meters = Decimal(end_altitude - start_altitude)
-            gps_velocity_east_next_meters_second = GoProFrameMakerHelper.decimalDivide( AC, time_diff ) 
+            gps_velocity_east_next_meters_second = GoProFrameMakerHelper.decimalDivide( AC, time_diff )
             gps_velocity_north_next_meters_second = GoProFrameMakerHelper.decimalDivide( BC, time_diff )
             gps_velocity_up_next_meters_second = GoProFrameMakerHelper.decimalDivide( gps_elevation_change_next_meters, time_diff )
             gps_speed_next_meters_second = GoProFrameMakerHelper.decimalDivide( distance, time_diff )
@@ -189,11 +189,11 @@ class GoProFrameMakerHelper():
             'FileType',
             'FileTypeExtension',
             'CompressorName'
-        ] 
+        ]
         gpsFields = [
-            'GPSDateTime', 
-            'GPSLatitude', 
-            'GPSLongitude', 
+            'GPSDateTime',
+            'GPSLatitude',
+            'GPSLongitude',
             'GPSAltitude',
             'GPSHPositioningError',
             'GPSMeasureMode'
@@ -237,7 +237,7 @@ class GoProFrameMakerHelper():
         #Data order in the gpmf should be :
         # lat, long, alt, 2D speed, 3D speed, days since 2000, secs since midnight (ms precision), DOP, fix (0, 2D or 3D)
 
-        #initializing gpsData dictionary with default values to avoid KeyError when appending GPS data if GPSDateTime is not 
+        #initializing gpsData dictionary with default values to avoid KeyError when appending GPS data if GPSDateTime is not
         #found before GPSLatitude, GPSLongitude, or GPSAltitude
         data = {
        'GPSData': [],
@@ -255,8 +255,8 @@ class GoProFrameMakerHelper():
                     adata[tag] = elem.text.strip()
                 if tag == 'GPSDateTime':
                     #print("Found GPSDateTime: {}, adata values: {}".format(elem.text.strip(), adata))
-                    if previousDateTime is not None: 
-                        newDateTime = str(elem.text.strip())                        
+                    if previousDateTime is not None:
+                        newDateTime = str(elem.text.strip())
                         for k, v in adata.items():
                             data[k] = v
                         data['GPSDateTime'] = newDateTime
@@ -270,7 +270,7 @@ class GoProFrameMakerHelper():
                         previousDateTime = newDateTime
                         #data['GPSDateTime'] = previousDateTime
                     else:
-                        newDateTime = str(elem.text.strip())                        
+                        newDateTime = str(elem.text.strip())
                         for k, v in adata.items():
                             data[k] = v
                         data['GPSDateTime'] = newDateTime
@@ -282,7 +282,7 @@ class GoProFrameMakerHelper():
                             'GPSDateTime': newDateTime
                         }
                         previousDateTime = newDateTime
-                        
+
                 else:
                     if tag.strip() in ['GPSLatitude', 'GPSLongitude', 'GPSAltitude']:
                         if (len(ldata) <= 3):
@@ -328,7 +328,7 @@ class GoProFrameMakerHelper():
 
     @staticmethod
     def gpsTimestamps(gpsData, videoFieldData):
-        
+
         gpx = gpxpy.gpx.GPX()
 
         # Create first track in our GPX:
@@ -358,7 +358,7 @@ class GoProFrameMakerHelper():
                     if start_time == end_time:
                         start_time = end_time
                         diff = int((0.05)*1000.0)
-                        end_time = end_time+datetime.timedelta(0, 0.05) 
+                        end_time = end_time+datetime.timedelta(0, 0.05)
                 new = pd.date_range(start=start_time, end=end_time, inclusive='left', freq="{}ms".format(diff))
                 icounter = 0
                 dlLen = 1 if len(start_gps["GPSData"]) < 1 else len(start_gps["GPSData"])
@@ -385,11 +385,11 @@ class GoProFrameMakerHelper():
                 )
 
                 start_time = datetime.datetime.strptime(start_gps["GPSDateTime"].replace("Z", ""), "%Y:%m:%d %H:%M:%S.%f")
-                
+
                 l_1 = (start_time - first_start_time).total_seconds()
                 l_2 = (zero_duration - zero_start).total_seconds()
-                end_time = start_time+datetime.timedelta(0, l_2-l_1) 
-                
+                end_time = start_time+datetime.timedelta(0, l_2-l_1)
+
                 time_diff = (end_time - start_time).total_seconds()
                 diff = int((time_diff/float(len(start_gps["GPSData"])))*1000.0)
                 #check this later
@@ -398,7 +398,7 @@ class GoProFrameMakerHelper():
                         print('####')
                         start_time = end_time
                         diff = int((0.05)*1000.0)
-                        end_time = end_time+datetime.timedelta(0, 0.05) 
+                        end_time = end_time+datetime.timedelta(0, 0.05)
                 final_end_time = end_time
                 new = pd.date_range(start=start_time, end=end_time, inclusive='left', freq="{}ms".format(diff))
                 icounter = 0
@@ -433,9 +433,9 @@ class GoProFrameMakerHelper():
             start_longitude = GoProFrameMakerHelper.latLngToDecimal(gps["GPSLongitude"])
             start_altitude = GoProFrameMakerHelper.getAltitudeFloat(gps["GPSAltitude"])
             gpx_point = gpxpy.gpx.GPXTrackPoint(
-                latitude=start_latitude, 
-                longitude=start_longitude, 
-                time=start_time, 
+                latitude=start_latitude,
+                longitude=start_longitude,
+                time=start_time,
                 elevation=start_altitude
             )
             gpx_segment.points.append(gpx_point)
@@ -450,7 +450,7 @@ class GoProFrameMakerHelper():
                 end_altitude = GoProFrameMakerHelper.getAltitudeFloat(Timestamps[icounter+1]["GPSAltitude"])
 
                 ext = GoProFrameMakerHelper.calculateExtensions(
-                    gps, 
+                    gps,
                     (start_time, end_time, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -460,7 +460,7 @@ class GoProFrameMakerHelper():
                 )
             else:
                 ext = GoProFrameMakerHelper.calculateExtensions(
-                    gps, 
+                    gps,
                     (start_time, None, gps_epoch_seconds),
                     (
                         (start_latitude, start_longitude, start_altitude),
@@ -475,7 +475,7 @@ class GoProFrameMakerHelper():
                 """)
                 gpx_point.extensions.append(gpx_extension)
             icounter = icounter + 1
-        gpxData = gpx.to_xml() 
+        gpxData = gpx.to_xml()
 
         return {
             "gpx_data": gpxData,
@@ -565,7 +565,7 @@ class GoProFrameMakerHelper():
             status = False
 
         #validating input video files for max_sphere
-        if(args_input_len == 1): 
+        if(args_input_len == 1):
             if (args.max_sphere is not None):
                 arguments['max_sphere'] = Path(args.max_sphere)
                 if(arguments['max_sphere'].is_file() == False):
@@ -630,8 +630,8 @@ class GoProFrameMakerHelper():
                 status = False
 
         #validating output directory
-        if(args.media_folder_full_path is not None):
-            arguments['media_folder_full_path'] = Path(args.media_folder_full_path)
+        if(args.output_folder is not None):
+            arguments['media_folder_full_path'] = Path(args.output_folder)
             if(arguments['media_folder_full_path'].is_dir() == False):
                 try:
                     arguments['media_folder_full_path'].mkdir(parents=True, exist_ok=True)
@@ -712,8 +712,6 @@ class GoProFrameMakerHelper():
             else:
                 errors.append("{} file does not exists.".format(Path('./params.txt')))
                 status = False
-
-        
 
         return {
             'status': status,

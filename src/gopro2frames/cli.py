@@ -12,7 +12,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="gopro2frames",
                                 description="Convert GoPro 360/Fusion videos to frames")
     parser.add_argument("input", nargs="+", help="Video files (.mp4 or .360)")
-    parser.add_argument("--media_folder_full_path", type=str, help="Output directory for frames.", default="frames")
+    parser.add_argument("-o", "--output_folder", type=str, help="Output directory for frames.", default="frames")
     #ffmpeg binary
     parser.add_argument("--ffmpeg-path", type=str, help="Set the path for ffmpeg.", default=shutil.which("ffmpeg"))
     #ffmpeg options
@@ -52,8 +52,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == '__main__':
     main()
-    
-
-
-    
-
