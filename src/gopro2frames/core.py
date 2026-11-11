@@ -83,18 +83,39 @@ def _timestamp_to_seconds(token: str) -> float:
 class GoProFrameMakerParent():
     def __init__(self, args):
         getcontext().prec = 6
-        media_folder_full_path = str(args["output_folder"].resolve())
+        output_folder = args["output_folder"].resolve()
+        # All files created by the script go into a per-video run subfolder of
+        # output_folder. Only that subfolder is removed when the script runs
+        # again, so a re-run starts clean without touching anything else in
+        # output_folder.
+        run_folder = output_folder / f"{args['media_folder']}.gopro2frames"
         try:
-            if os.path.exists(media_folder_full_path):
-                shutil.rmtree(media_folder_full_path)
-            os.makedirs(media_folder_full_path, exist_ok=True)
-        except:
-            exit('Unable to create main media directory {}'.format(media_folder_full_path))
-
-        args['log_folder'] = Path('{}{}{}'.format(str(args['output_folder'].resolve()), os.sep, 'logs'))
+            if run_folder.exists():
+                self.__removeRunFolder(output_folder, run_folder)
+            run_folder.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            exit('Unable to create run directory {}'.format(str(run_folder)))
+        args["output_folder"] = run_folder
+        args['log_folder'] = Path('{}{}{}'.format(str(run_folder), os.sep, 'logs'))
         args['date_time_current'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         self._args = args
         self.__setLogging()
+
+    def __removeRunFolder(self, output_folder, run_folder):
+        # Safety net: only delete a run subfolder that is a direct child of
+        # output_folder and contains nothing but artifacts made by this tool.
+        if run_folder.is_symlink() or run_folder.resolve().parent != output_folder.resolve():
+            exit('Refusing to delete {}: not a direct subfolder of {}'.format(str(run_folder), str(output_folder)))
+        allowed_dirs = ('logs', 'front', 'back', 'track0', 'track5')
+        allowed_files = ('*.jpg', '*.gpx', '*.xml', '*.log')
+        for entry in os.listdir(str(run_folder)):
+            path = os.path.join(str(run_folder), entry)
+            if os.path.isdir(path) and not os.path.islink(path):
+                if entry not in allowed_dirs:
+                    exit('Refusing to delete {}: unexpected subfolder {}'.format(str(run_folder), entry))
+            elif not any(fnmatch.fnmatch(entry, pattern) for pattern in allowed_files):
+                exit('Refusing to delete {}: unexpected file {}'.format(str(run_folder), entry))
+        shutil.rmtree(str(run_folder))
 
     @property
     def __args(self):

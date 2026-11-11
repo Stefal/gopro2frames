@@ -631,13 +631,13 @@ class GoProFrameMakerHelper():
 
         #validating output directory
         if(args.output_folder is not None):
-            arguments['media_folder_full_path'] = Path(args.output_folder)
-            if(arguments['media_folder_full_path'].is_dir() == False):
+            arguments['output_folder'] = Path(args.output_folder)
+            if(arguments['output_folder'].is_dir() == False):
                 try:
-                    arguments['media_folder_full_path'].mkdir(parents=True, exist_ok=True)
-                    info.append("Output directory {} created successfully.".format(str(arguments['media_folder_full_path'].resolve())))
+                    arguments['output_folder'].mkdir(parents=True, exist_ok=True)
+                    info.append("Output directory {} created successfully.".format(str(arguments['output_folder'].resolve())))
                 except Exception as e:
-                    errors.append("Output directory {} does not exists and could not be created. Please make sure you have write permissions.".format(str(arguments['media_folder_full_path'].resolve())))
+                    errors.append("Output directory {} does not exists and could not be created. Please make sure you have write permissions.".format(str(arguments['output_folder'].resolve())))
                     status = False
         else:
             errors.append("Output directory is not provided. Please provide output directory to save the frames.")
