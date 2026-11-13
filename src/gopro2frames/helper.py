@@ -667,7 +667,7 @@ class GoProFrameMakerHelper():
                 except ValueError:
                     pass
             if frameRate not in fropts and str(frameRate).lower() != "auto":
-                errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5, 10, 25, 29.97, 30, and 'auto' options are available.".format(frameRate))
+                errors.append("Frame rate {} is not available. Available options: {}.".format(frameRate, ", ".join(map(str, fropts))))
                 status = False
             else:
                 arguments["frame_rate"] = frameRate
@@ -679,7 +679,7 @@ class GoProFrameMakerHelper():
             quality = int(args.quality)
             qopts = [1,2,3,4,5]
             if quality not in qopts:
-                errors.append("Extracted quality {} is not available. Only 1, 2, 3, 4, 5 options are available.".format(quality))
+                errors.append("Extracted quality {} is not available. Available options: {}.".format(quality, ", ".join(map(str, qopts))))
                 status = False
             else:
                 arguments["quality"] = quality
@@ -691,7 +691,8 @@ class GoProFrameMakerHelper():
             timeWarp = str(args.time_warp)
             twopts = ["2x", "5x", "10x", "15x", "30x", "auto"]
             if timeWarp not in twopts:
-                errors.append("Timewarp mode {} not available. Only 2x, 5x, 10x, 15x, 30x, and 'auto' options are available.".format(timeWarp))
+                errors.append("Timewarp mode {} not available. Available options: {}.".format(timeWarp, ", ".join(map(str, twopts))))
+                status = False
             else:
                 arguments["time_warp"] = timeWarp
         else:
