@@ -668,6 +668,7 @@ class GoProFrameMakerHelper():
                     pass
             if frameRate not in fropts and str(frameRate).lower() != "auto":
                 errors.append("Frame rate {} is not available. Only 0.5, 1, 2, 5, 10, 25, 29.97, 30, and 'auto' options are available.".format(frameRate))
+                status = False
             else:
                 arguments["frame_rate"] = frameRate
         else:
