@@ -539,7 +539,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
             logging.critical("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
             exit("This file does not look like it was captured using a GoPro camera. Only content taken using a GoPro 360 Camera are currently supported.")
 
-        if args["frame_rate"].lower() == 'auto':
+        if str(args["frame_rate"]).lower() == 'auto':
             if videoData.get("VideoFrameRate") is not None:
                 self._args["frame_rate"] = round(float(videoData.get("VideoFrameRate").strip().lower()),2)
                 print("Frame rate detected from metadata: {}".format(args["frame_rate"]))
@@ -547,7 +547,7 @@ class GoProFrameMaker(GoProFrameMakerParent):
                 logging.warning("Unable to determine frame rate from metadata. Please specify the frame rate using the --frame-rate option.")
                 exit("Unable to determine frame rate from metadata. Please specify the frame rate using the --frame-rate option.")
 
-        if args["time_warp"].lower() == "auto":
+        if str(args["time_warp"]).lower() == "auto":
             if videoData.get("Rate") is not None:
                 self._args["time_warp"] = videoData.get("Rate").strip().lower()
                 print("Timewarp rate detected from metadata: {}".format(args["time_warp"]))
